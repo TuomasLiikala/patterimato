@@ -1,0 +1,226 @@
+//tekeminen aloitettu 3.12.2003
+
+#include <stdio.h>
+#include <allegro.h>
+
+                //**** taulukkojen asetus ****
+
+typedef struct
+  {
+  int x, y;
+  } MATO;
+
+  int main(void)
+  {
+
+                //**** kuvien asetus ****
+  
+        BITMAP *tausta;
+        BITMAP *palikka;
+        BITMAP *aavikko;
+        BITMAP *paristo;
+        BITMAP *paristo2;
+        BITMAP *paristo3;
+        PALETTE pal;
+
+                //**** taulukot ****
+
+        MATO pala[1600] = {};
+
+                //**** muuttujat ****
+
+        int x=312;
+        int y=8;
+        int hidastus=0;
+        int hidastus_max=40000000;
+        int asento=1;
+        int lopetus=0;
+        int uudestaan=0;
+        int turha=0;
+        int osa=1;
+        int osia=10;
+        int patteri=0;
+        int patteri_x=0;
+        int patteri_y=0;
+        int pisteet=0;
+        int kaannos=1;
+        int vuoro_kaannos=0;
+        int taso=0;
+
+                //**** tilojen asettamista ****
+
+         allegro_init();
+         install_keyboard();
+         set_gfx_mode(GFX_AUTODETECT,320,200,0,0);
+
+                //**** kuvien lataamista ****
+
+         tausta=load_bmp("aavikko.bmp",pal);
+         aavikko=load_bmp("aavikko.bmp",pal);
+         palikka=load_bmp("palikka.bmp",pal);
+         paristo=load_bmp("paristo.bmp",pal);
+         paristo2=load_bmp("paristo2.bmp",pal);
+         paristo3=load_bmp("paristo3.bmp",pal);
+         set_palette(pal);
+
+         while(turha<1600)
+                {
+                pala[turha].x=-8, pala[turha].y=-8;
+                turha++;
+                }
+                turha=0;
+
+        while(lopetus==0)
+                {
+
+                // **** kuhnimista ****
+                
+                while(hidastus<hidastus_max) //hidastus
+                {
+                hidastus++;
+                if(key[KEY_LEFT] && kaannos==1) asento--,kaannos++;
+                if(key[KEY_RIGHT] && kaannos==1) asento++,kaannos++;
+                }
+                hidastus=0;
+
+                // **** patterit ****
+
+                if(patteri==0)
+                {
+                patteri_y=rand()%(22);
+                patteri_x=rand()%(39);
+                patteri=rand()%(4);
+                patteri_y=patteri_y*8;
+                patteri_x=patteri_x*8;
+                }
+                
+                // **** n„pp„„met ****
+
+                if(key[KEY_ESC]) lopetus=1;
+                if(!key[KEY_LEFT] && !key[KEY_RIGHT]) kaannos=1;
+                if(key[KEY_Z]) hidastus_max=hidastus_max*0.9;
+                if(key[KEY_X]) hidastus_max=hidastus_max*1.1;
+                if(key[KEY_P])
+                {
+                while(!key[KEY_SPACE])
+                {
+                gotoxy(12,14);
+                printf("paina 'SPACEA'");
+                }
+                }
+
+                // **** liikkuminen ****
+
+                pala[osa].x=x;
+                pala[osa].y=y;
+                osa++;
+                if(osa==osia)osa=0;
+
+                if(asento==0)asento=4;
+                if(asento==5)asento=1;
+
+                if(asento==1) x=x-8;
+                if(asento==2) y=y-8;
+                if(asento==3) x=x+8;
+                if(asento==4) y=y+8;
+
+                // **** paristojen nieleminen ****
+
+                while(turha<1001)     //alle j„„neiden patterejen kadottaminen
+                {
+                if(patteri_x==pala[turha].x && patteri_y==pala[turha].y)
+                {
+                patteri=0;
+                }
+                turha++;
+                }
+                turha=0;
+
+                if(patteri_x==x && patteri_y==y)
+                {
+                if(patteri==1)pisteet++,osia++;
+                if(patteri==2)pisteet=pisteet+5,osia=osia+2;
+                if(patteri==3)pisteet=pisteet+10,osia=osia+3;
+                patteri=0;
+                }
+                
+                // **** kuoleminen ****
+
+                if(x<0)lopetus=1;
+                if(y<0)lopetus=1;
+                if(x>312)lopetus=1;
+                if(y>176)lopetus=1;
+
+                while(turha<1001)
+                {
+                if(pala[turha].x==x && pala[turha].y==y)lopetus=1;
+                turha++;
+                }
+                turha=0;
+
+                // **** piirt„minen ****
+
+                draw_sprite(tausta,aavikko,0,0);
+                draw_sprite(tausta,palikka,x,y);                
+                if(patteri==1)draw_sprite(tausta,paristo,patteri_x,patteri_y);
+                if(patteri==2)draw_sprite(tausta,paristo2,patteri_x,patteri_y);
+                if(patteri==3)draw_sprite(tausta,paristo3,patteri_x,patteri_y);
+                
+                while(turha<osia)
+                {
+                draw_sprite(tausta,palikka,pala[turha].x,pala[turha].y);
+                turha++;
+                }
+                turha=0;
+
+                blit(tausta,screen,0,0,0,0,tausta->w, tausta->h);
+                
+                // **** seuraava kentt„ ****
+
+                if(pisteet>taso*100-1)
+                {
+                taso++;
+                while(!key[KEY_SPACE])
+                {
+                gotoxy(15,2);
+                printf("kentt„:%d",taso);
+                gotoxy(1,4);
+                if(taso==1)printf("N„pp„imet:\n\nZ:peli nopeutuu\nX:peli hidastuu\n<:k„„nn”s vasempaan\n>:k„„nn”s oikeaan\n\nVihre„ palakki=+1 piste\nSininen palakki=+5 pistett„\nPunainen palakki=+10 pistett„");
+                if(taso==2)printf("Ihan hyvin aloitelialle.");
+                if(taso==3)printf("Koirakin pystyisi samaan.");
+                if(taso==4)printf("Kissin taidoilla hyvin.");
+                if(taso==5)printf("On tuo ny jonkin verran.");
+                if(taso==6)printf("Hyv„t perus pisteet.");
+                if(taso==7)printf("Alkaako k„yd„ vaikeaksi?");
+                if(taso==8)printf("Et ollutkaan kovin huono.");
+                if(taso==9)printf("Aika hyv„ suoritus.");
+                if(taso==10)printf("nooh, en voi haukkua.");
+                if(taso==11)printf("Kiva summa jo.");
+                if(taso==12)printf("Huh Huh, hyvin menee n„in kaverien kesken.");
+                if(taso==13)printf("En tied„ mit„ sanoisin, olen sanaton!");
+                if(taso==14)printf("Alkaako tila loppumaan?");
+                if(taso==15)printf("T„ss„ tarttis koodeja jo.");
+                if(taso==16)printf("No, paina enteri„ pohjassa („l„k„ p„„st„ yl”s).");
+                if(taso==17)printf("Auttoiko, jatka vaan? ;)");
+                if(taso==18)printf("Sit„ samaa...");
+                if(taso==19)printf("L„het„ vaikka postia osoitteeseen: Tuppu_88jippii.fi\nOn meinaa toi sun peli kokemus 'TŽYDELLINEN'");
+                if(taso==20)printf("Arvaappa mik„ arsytt„„?");
+                if(taso==21)printf("No se ku Vice city pit„„ pelata taas l„pi.\n1. kerralla kaveri tallensi mun tallenuksen p„„lle.\n2. kerralla piti ladata niin poistin tallenuksen.\n ARGH");
+                if(taso==22)printf("Eth„n k„yt„ koodeja?");
+                if(taso==23)printf("No sovitaan ett„ menit l„pi. ;)");
+                if(taso==24)printf("Eik” viel„k„„n riit„, nyt riitt„„!!! :-)"),osia=1500;
+                gotoxy(12,19);
+                printf("paina 'SPACEA'");
+                }
+                }
+
+                // **** alapalakin piirto ****
+
+                gotoxy(2,24);
+                printf("pisteet: %d kentt„: %d",pisteet,taso);
+
+                }
+
+        return(0);
+    }
+    
